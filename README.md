@@ -126,3 +126,22 @@ This project includes a `render.yaml` configuration for immediate deployment on 
 3. Deploy a new service by selecting **Blueprints** and pointing to this repository.
 4. Render will automatically parse the `render.yaml` file, build the environment, generate a secure `SECRET_KEY`, and deploy the web service using Gunicorn.
 5. Make sure to define the `GEMINI_API_KEY` environment variable in your Render dashboard under the service's Environment settings.
+
+---
+
+## Screenshots
+
+### 🌟 SaaS Landing Page
+![SaaS Landing Page](docs/screenshots/landing_page.png)
+
+### 📋 Carbon Footprint Calculator
+![Carbon Footprint Calculator](docs/screenshots/calculator.png)
+
+### 📊 Gamified Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### 💡 AI Recommendations
+![AI Recommendations](docs/screenshots/ai_recommendations.png)
+
+### 📈 Reports & Trends
+![Reports](docs/screenshots/reports.png)
