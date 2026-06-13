@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}Carbon Reports – EcoTrack AI{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- html2pdf.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <!-- Report Header -->
+    <div class="report-header">
+        <div>
+            <h2 style="font-size: 28px; font-weight: 800;">Analytics & Reports</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">Examine your historical tracking data, averages, and print summaries.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button onclick="exportToCSV()" class="btn btn-secondary">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+            <button onclick="triggerPrintPDF()" class="btn btn-primary">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+            </button>
+        </div>
+    </div>
+    
+    <!-- Capturable content wrapper for PDF generation -->
+    <div id="reports-pdf-content" style="padding: 10px; border-radius: 12px; display: flex; flex-direction: column; gap: 24px;">
+        
+        <div style="margin-bottom: -10px; display: none;" class="pdf-only-header">
+            <h2 style="color: var(--primary); font-size: 24px; font-weight: 800;"><i class="fa-solid fa-leaf"></i> EcoTrack AI Carbon Audit</h2>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Carbon Footprint analysis for {{ g.user.username }}</p>
+        </div>
+
+        <!-- Report Metrics Row -->
+        <div class="report-stats-grid">
+            <div class="glass-card text-center">
+                <div style="font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">Average Carbon Footprint</div>
+                <div style="font-size: 32px; font-weight: 800; color: var(--primary);">{{ "%.2f"|format(avg) }}</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">tCO2e/yr (Lower is better)</div>
+            </div>
+            
+            <div class="glass-card text-center">
+                <div style="font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">Latest Carbon Footprint</div>
+                <div style="font-size: 32px; font-weight: 800; color: var(--accent);">{{ latest_calc.total_emissions }}</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">tCO2e/yr (Calculated recently)</div>
+            </div>
+            
+            <div class="glass-card text-center">
+                <div style="font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px;">Carbon Trend (Last 2 Logs)</div>
+                <div>
+                    {% if trend_direction == 'decreasing' %}
+                        <span class="trend-indicator decreasing">
+                            <i class="fa-solid fa-arrow-trend-down"></i> Decreased by {{ trend_percentage }}%
+                        </span>
+                    {% elif trend_direction == 'increasing' %}
+                        <span class="trend-indicator increasing">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Increased by {{ trend_percentage }}%
+                        </span>
+                    {% else %}
+                        <span class="trend-indicator neutral">
+                            <i class="fa-solid fa-arrows-left-right"></i> Stable footprint
+                        </span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">Based on your last calculation differential</div>
+            </div>
+        </div>
+        
+        <!-- Interactive History Chart Card -->
+        <div class="glass-card" id="pdf-chart-card">
+            <div class="card-title">
+                <i class="fa-solid fa-chart-line"></i> Long-term Footprint Trend
+            </div>
+            <div class="chart-wrapper" style="height: 320px;">
+                <canvas id="historyReportChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Historical Carbon Log Table -->
+        <div class="glass-card">
+            <div class="card-title">
+                <i class="fa-solid fa-list-check"></i> Historical Calculation Logs
+            </div>
+            
+            <div class="admin-table-container">
+                <table class="admin-table" id="carbon-log-table">
+                    <thead>
+                        <tr>
+                            <th>Date Calculated</th>
+                            <th>Transportation (tCO2e)</th>
+                            <th>Energy (tCO2e)</th>
+                            <th>Food (tCO2e)</th>
+                            <th>Waste (tCO2e)</th>
+                            <th>Total Footprint (tCO2e/yr)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for calc in calcs|reverse %}
+                            <tr>
+                                <td><strong>{{ calc.calculated_at.strftime('%Y-%b-%d %H:%M') }}</strong></td>
+                                <td>{{ calc.transport_emissions }}</td>
+                                <td>{{ calc.electricity_emissions }}</td>
+                                <td>{{ calc.food_emissions }}</td>
+                                <td>{{ calc.waste_emissions }}</td>
+                                <td style="font-weight: 700; color: var(--primary);">{{ calc.total_emissions }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const reportCtx = document.getElementById('historyReportChart').getContext('2d');
+    
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#10b981';
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#ffffff';
+
+    fetch('/api/emissions-history')
+        .then(response => response.json())
+        .then(data => {
+            const labels = data.map(item => item.date);
+            const totals = data.map(item => item.total);
+            const transport = data.map(item => item.transport);
+            const electricity = data.map(item => item.electricity);
+            const food = data.map(item => item.food);
+            const waste = data.map(item => item.waste);
+            
+            const historyReportChart = new Chart(reportCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Total Emissions',
+                            data: totals,
+                            borderColor: primaryColor,
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointBackgroundColor: primaryColor
+                        },
+                        {
+                            label: 'Transportation',
+                            data: transport,
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.3,
+                            hidden: true
+                        },
+                        {
+                            label: 'Electricity/Energy',
+                            data: electricity,
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.3,
+                            hidden: true
+                        },
+                        {
+                            label: 'Diet habits',
+                            data: food,
+                            borderColor: '#10B981',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.3,
+                            hidden: true
+                        },
+                        {
+                            label: 'Waste recycling',
+                            data: waste,
+                            borderColor: '#34d399',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.3,
+                            hidden: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: textColor,
+                                font: {
+                                    family: 'Outfit',
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    family: 'Outfit',
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    family: 'Outfit',
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(err => console.error('Error fetching trend details for reports:', err));
+});
+
+// CSV Export Logic
+function exportToCSV() {
+    const table = document.getElementById('carbon-log-table');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [];
+        const cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            // Remove comma if any and wrap in double quotes
+            let text = cols[j].innerText.replace(/"/g, '""');
+            row.push(`"${text}"`);
+        }
+        csv.push(row.join(','));
+    }
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "ecotrack_carbon_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Print PDF Page
+function triggerPrintPDF() {
+    const element = document.getElementById('reports-pdf-content');
+    const header = document.querySelector('.pdf-only-header');
+    
+    // Temporarily show the PDF-only header
+    if (header) header.style.display = 'block';
+
+    const isLightMode = document.body.classList.contains('light-theme');
+    const opt = {
+        margin:       [0.4, 0.4],
+        filename:     'ecotrack_carbon_report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: isLightMode ? '#F0FDFA' : '#060C0A'
+        },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    // Find PDF button to show spinner
+    const btn = document.querySelector('.btn-primary');
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating...';
+    btn.disabled = true;
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        if (header) header.style.display = 'none';
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+    }).catch(err => {
+        console.error("html2pdf failed, falling back to window.print():", err);
+        if (header) header.style.display = 'none';
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+        window.print();
+    });
+}
+</script>
+{% endblock %}

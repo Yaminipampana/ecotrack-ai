@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}Carbon Calculator – EcoTrack AI{% endblock %}
+
+{% block content %}
+<div class="container calc-page">
+    <div class="glass-card calc-wizard">
+        
+        <!-- Progress Indicators -->
+        <div class="wizard-progress">
+            <div class="wizard-progress-bar">
+                <div class="wizard-progress-fill"></div>
+            </div>
+            <div class="wizard-steps-indicators">
+                <div class="wizard-step-indicator active">1. Transit</div>
+                <div class="wizard-step-indicator">2. Energy</div>
+                <div class="wizard-step-indicator">3. Diet</div>
+                <div class="wizard-step-indicator">4. Waste</div>
+            </div>
+        </div>
+
+        <!-- Multi-Step Form -->
+        <form id="calc-form" action="{{ url_for('calculator') }}" method="POST">
+            
+            <!-- STEP 1: Transportation -->
+            <div class="wizard-step-pane active">
+                <div class="wizard-step-header">
+                    <h3>Transportation Habits</h3>
+                    <p>Tell us about your travel routines to compute transit carbon footprint.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="car_miles" class="form-label">Annual Car Driving (Miles/year)</label>
+                    <input type="number" id="car_miles" name="car_miles" class="form-control" value="0" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Vehicle Type</label>
+                    <div class="choice-grid">
+                        <label class="choice-card selected">
+                            <input type="radio" name="fuel_type" value="gasoline" checked>
+                            <i class="fa-solid fa-car-side"></i>
+                            <span>Gasoline</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="fuel_type" value="hybrid">
+                            <i class="fa-solid fa-car-battery"></i>
+                            <span>Hybrid</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="fuel_type" value="electric">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Electric EV</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transit_miles" class="form-label">Annual Public Transit (Bus/Train Miles)</label>
+                    <input type="number" id="transit_miles" name="transit_miles" class="form-control" value="0" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="flight_hours" class="form-label">Annual Flight Duration (Hours)</label>
+                    <input type="number" id="flight_hours" name="flight_hours" class="form-control" value="0" min="0" required>
+                </div>
+            </div>
+
+            <!-- STEP 2: Energy -->
+            <div class="wizard-step-pane">
+                <div class="wizard-step-header">
+                    <h3>Home Energy Consumption</h3>
+                    <p>Enter details on your household utility usage.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="electricity_kwh" class="form-label">Average Monthly Electricity (kWh)</label>
+                    <input type="number" id="electricity_kwh" name="electricity_kwh" class="form-control" value="0" min="0" required>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">An average US household consumes around 900 kWh per month.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="solar_panels" class="form-label">Do you utilize Solar Panels at home?</label>
+                    <select id="solar_panels" name="solar_panels" class="form-control">
+                        <option value="no">No, standard power grid</option>
+                        <option value="yes">Yes, active solar systems</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- STEP 3: Diet -->
+            <div class="wizard-step-pane">
+                <div class="wizard-step-header">
+                    <h3>Diet and Food Habits</h3>
+                    <p>Choose the option that matches your weekly food habits.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Your Diet</label>
+                    <div class="choice-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));">
+                        <label class="choice-card">
+                            <input type="radio" name="diet" value="vegan">
+                            <i class="fa-solid fa-leaf"></i>
+                            <span>Vegan</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="diet" value="vegetarian">
+                            <i class="fa-solid fa-seedling"></i>
+                            <span>Vegetarian</span>
+                        </label>
+                        <label class="choice-card selected">
+                            <input type="radio" name="diet" value="mixed" checked>
+                            <i class="fa-solid fa-bowl-food"></i>
+                            <span>Mixed Diet</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="diet" value="heavy_meat">
+                            <i class="fa-solid fa-drumstick-bite"></i>
+                            <span>Meat Lover</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: Waste -->
+            <div class="wizard-step-pane">
+                <div class="wizard-step-header">
+                    <h3>Waste & Recycling</h3>
+                    <p>Let us know your waste production and recycling ratios.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="recycle_pct" class="form-label">Percentage of Waste Recycled & Composted (%)</label>
+                    <input type="range" id="recycle_pct" name="recycle_pct" class="form-control" min="0" max="100" value="30" style="padding: 6px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 6px; color: var(--text-secondary);">
+                        <span>0% (Landfill)</span>
+                        <span id="recycle-indicator" style="font-weight: 700; color: var(--primary);">30%</span>
+                        <span>100% (Zero Waste)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time dynamic estimator block -->
+            <div class="realtime-estimate-card">
+                <div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Estimated Carbon Footprint</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Recalculates as you fill the steps</div>
+                </div>
+                <div class="estimate-val" id="projected-score">0.00 tCO2e/yr</div>
+            </div>
+
+            <!-- Wizard Control Buttons -->
+            <div class="wizard-actions">
+                <button type="button" class="btn btn-secondary" id="prev-btn" style="display: none;">
+                    <i class="fa-solid fa-chevron-left"></i> Previous
+                </button>
+                
+                <!-- Placeholder spacer -->
+                <div></div>
+                
+                <button type="button" class="btn btn-primary" id="next-btn">
+                    Next <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button type="submit" class="btn btn-primary" id="submit-btn" style="display: none; background: var(--primary);">
+                    <i class="fa-solid fa-square-poll-vertical"></i> Calculate Footprint
+                </button>
+            </div>
+            
+        </form>
+    </div>
+</div>
+
+<!-- Calculate and AI loading spinner overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Analyzing metrics & generating custom Gemini AI reports...</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+<script>
+    // Live recycle range updating
+    const rangeInput = document.getElementById('recycle_pct');
+    const indicator = document.getElementById('recycle-indicator');
+    if (rangeInput && indicator) {
+        rangeInput.addEventListener('input', () => {
+            indicator.innerText = `${rangeInput.value}%`;
+        });
+    }
+</script>
+{% endblock %}

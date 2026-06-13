@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}EcoTrack AI – Personal Carbon Footprint Tracker{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <div class="container">
+        <h1 class="hero-title">
+            Empower Your Journey to <br>
+            <span>Carbon Neutrality</span> with AI
+        </h1>
+        <p class="hero-subtitle">
+            EcoTrack AI calculates your footprint across transit, energy, diet, and waste, generating personalized recommendations using Google Gemini API to guide you toward a sustainable lifestyle.
+        </p>
+        
+        <div class="hero-actions">
+            <a href="{{ url_for('signup') }}" class="btn btn-primary btn-large">
+                <i class="fa-solid fa-rocket"></i> Get Started Free
+            </a>
+            <a href="#features" class="btn btn-secondary btn-large">
+                <i class="fa-solid fa-circle-play"></i> Explore Features
+            </a>
+        </div>
+        
+        <!-- SaaS Styled Glass Statistics -->
+        <div class="stats-grid">
+            <div class="glass-card stat-card">
+                <div class="stat-number">45K+</div>
+                <div class="stat-label">Calculations Logged</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-number">28%</div>
+                <div class="stat-label">Avg. Carbon Reduction</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-number">220K+</div>
+                <div class="stat-label">Green Points Awarded</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Eco-Conscious Science</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <div class="container">
+        <h2 class="section-title">Designed for Carbon Awareness</h2>
+        <p class="section-subtitle">
+            Simple, interactive, and AI-driven features designed to make tracking emissions straightforward and rewarding.
+        </p>
+        
+        <div class="features-grid">
+            <!-- Feature 1: Calculator -->
+            <div class="glass-card feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <h3>Detailed Carbon Calculator</h3>
+                <p>
+                    Evaluate your travel, home energy, diets, and packaging waste through our intuitive, step-by-step carbon footprint wizard.
+                </p>
+            </div>
+            
+            <!-- Feature 2: Gemini recommendations -->
+            <div class="glass-card feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h3>AI-Powered Recommendations</h3>
+                <p>
+                    Leverage the Gemini API to analyze your specific metrics and receive customized action plans, tips, and environmental impact insights.
+                </p>
+            </div>
+            
+            <!-- Feature 3: Challenges -->
+            <div class="glass-card feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <h3>Daily Eco-Challenges</h3>
+                <p>
+                    Participate in sustainable tasks, earn green points, level up your profile, and win unique achievement badges.
+                </p>
+            </div>
+            
+            <!-- Feature 4: Reports -->
+            <div class="glass-card feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </div>
+                <h3>Visual Reports & PDFs</h3>
+                <p>
+                    Monitor weekly and monthly trends with beautiful Chart.js integrations and download professional PDF summaries in one click.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

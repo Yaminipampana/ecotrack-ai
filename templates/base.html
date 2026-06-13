@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EcoTrack AI – Carbon Footprint Awareness Platform{% endblock %}</title>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Flash Messages Toast Container -->
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {% if category == 'success' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                        {% elif category == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        {% elif category == 'warning' %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="{{ url_for('index') }}" class="logo">
+                <i class="fa-solid fa-leaf"></i> EcoTrack AI
+            </a>
+            
+            <button class="mobile-nav-toggle" id="mobile-toggle" aria-label="Toggle Navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links" id="nav-links">
+                {% if g.user %}
+                    <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a></li>
+                    <li><a href="{{ url_for('calculator') }}" class="nav-link {% if request.path == '/calculator' %}active{% endif %}">Calculator</a></li>
+                    <li><a href="{{ url_for('reports') }}" class="nav-link {% if request.path == '/reports' %}active{% endif %}">Reports</a></li>
+                    <li><a href="{{ url_for('leaderboard') }}" class="nav-link {% if request.path == '/leaderboard' %}active{% endif %}">Leaderboard</a></li>
+                    <li><a href="{{ url_for('profile') }}" class="nav-link {% if request.path == '/profile' %}active{% endif %}">Profile</a></li>
+                    {% if g.user.is_admin %}
+                        <li><a href="{{ url_for('admin') }}" class="nav-link {% if request.path == '/admin' %}active{% endif %}" style="color: var(--warning); font-weight: 700;">Admin Panel</a></li>
+                    {% endif %}
+                {% else %}
+                    <li><a href="{{ url_for('index') }}#features" class="nav-link">Features</a></li>
+                    <li><a href="{{ url_for('login') }}" class="nav-link {% if request.path == '/login' %}active{% endif %}">Login</a></li>
+                    <li><a href="{{ url_for('signup') }}" class="nav-link {% if request.path == '/signup' %}active{% endif %}">Sign Up</a></li>
+                {% endif %}
+            </ul>
+            
+            <div class="nav-actions">
+                {% if g.user %}
+                    <!-- User green level indicator -->
+                    <div class="user-nav-badge">
+                        <i class="fa-solid fa-award"></i> Level <span>{{ g.user.current_level }}</span>
+                    </div>
+                {% endif %}
+                <button class="theme-toggle" id="theme-toggle" aria-label="Switch Theme">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+                {% if g.user %}
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">Log Out</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 EcoTrack AI. Empowering sustainable living.</p>
+            <ul class="footer-links">
+                <li><a href="https://www.unep.org" target="_blank" rel="noopener">UN Environment</a></li>
+                <li><a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">CO2 Trends</a></li>
+                <li><a href="https://ai.google/discover/gemini/" target="_blank" rel="noopener">Google Gemini API</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Main Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

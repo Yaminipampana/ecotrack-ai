@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard – EcoTrack AI{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="dashboard-grid">
+        
+        <!-- Main Column (Left) -->
+        <div class="dashboard-main">
+            
+            <!-- Welcome Header -->
+            <div class="welcome-header">
+                <h2 style="font-size: 28px; font-weight: 800;">Hello, {{ g.user.username }}!</h2>
+                <p style="color: var(--text-secondary); margin-top: 4px;">Here is your carbon footprint analysis and sustainability guide.</p>
+            </div>
+            
+            <!-- Metrics Cards Row -->
+            <div class="metrics-row">
+                <div class="glass-card metric-mini-card">
+                    <div class="metric-mini-icon emissions">
+                        <i class="fa-solid fa-cloud"></i>
+                    </div>
+                    <div>
+                        <div class="metric-mini-val">{{ calc.total_emissions }}</div>
+                        <div class="metric-mini-label">Annual Footprint (tCO2e)</div>
+                    </div>
+                </div>
+                
+                <div class="glass-card metric-mini-card">
+                    <div class="metric-mini-icon saved">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <div>
+                        <div class="metric-mini-val">{{ "%.2f"|format(co2_saved) }}</div>
+                        <div class="metric-mini-label">Carbon Offset Offset (tCO2e)</div>
+                    </div>
+                </div>
+                
+                <div class="glass-card metric-mini-card points-card">
+                    <div class="metric-mini-icon points">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <div>
+                        <div class="metric-mini-val">{{ g.user.green_points }}</div>
+                        <div class="metric-mini-label">Green Points (XP)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts and Visualization Card -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-chart-pie"></i> Footprint Analysis
+                </div>
+                <div class="charts-grid">
+                    <!-- Doughnut Breakdown -->
+                    <div>
+                        <h4 style="margin-bottom: 12px; font-size: 14px; font-weight: 600; color: var(--text-secondary);">Emissions by Category (tCO2e/yr)</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Line Trend -->
+                    <div>
+                        <h4 style="margin-bottom: 12px; font-size: 14px; font-weight: 600; color: var(--text-secondary);">Historical Progress (tCO2e/yr)</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gemini AI Recommendations Card -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI-Powered Recommendations
+                </div>
+                
+                {% if recommendations %}
+                    <div class="ai-tabs">
+                        <button class="ai-tab active" data-target="ai-summary">Impact Summary</button>
+                        <button class="ai-tab" data-target="ai-tips">Targeted Tips</button>
+                        <button class="ai-tab" data-target="ai-weekly">7-Day Plan</button>
+                    </div>
+                    
+                    <!-- Summary Pane -->
+                    <div class="ai-content-pane active" id="ai-summary">
+                        <p class="ai-summary-text">{{ recommendations.summary }}</p>
+                        <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px; background: rgba(52, 211, 153, 0.08); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>
+                            <span style="font-size: 13px; color: var(--text-secondary);">These suggestions are custom-tailored by EcoTrack AI based on your calculation inputs.</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tips Pane -->
+                    <div class="ai-content-pane" id="ai-tips">
+                        <div class="ai-tips-list">
+                            {% for tip in recommendations.tips %}
+                                <div class="ai-tip-card">
+                                    <span class="ai-tip-badge">{{ tip.category }}</span>
+                                    <p class="ai-tip-text">{{ tip.tip }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Weekly Plan Pane -->
+                    <div class="ai-content-pane" id="ai-weekly">
+                        <div class="ai-weekly-calendar">
+                            {% for day_plan in recommendations.weekly_plan %}
+                                <div class="ai-weekly-day">
+                                    {% set parts = day_plan.split(':') %}
+                                    <div class="ai-weekly-day-title">Day {{ loop.index }}</div>
+                                    <div class="ai-weekly-day-desc">
+                                        {% if parts|length > 1 %}
+                                            {{ parts[1]|join(':')|trim }}
+                                        {% else %}
+                                            {{ day_plan }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <p style="color: var(--text-secondary); text-align: center; padding: 20px 0;">No recommendations generated yet. Try recalculating your footprint.</p>
+                {% endif %}
+            </div>
+            
+        </div>
+        
+        <!-- Sidebar Column (Right) -->
+        <div class="dashboard-sidebar">
+            
+            <!-- Level and XP Card -->
+            <div class="glass-card">
+                <div class="gamified-header">
+                    <div class="card-title" style="margin-bottom: 0;">
+                        <i class="fa-solid fa-gamepad"></i> Game Progress
+                    </div>
+                </div>
+                
+                <div class="level-wrapper" style="margin-bottom: 20px;">
+                    <div class="level-circle">
+                        <span class="lbl">lvl</span>
+                        <span class="val">{{ g.user.current_level }}</span>
+                    </div>
+                    
+                    <div class="xp-progress-bar-container">
+                        <div class="xp-progress-meta">
+                            <span>{{ g.user.green_points % 500 }} / 500 XP</span>
+                            <span>Level {{ g.user.current_level + 1 }}</span>
+                        </div>
+                        <div class="xp-progress-bar">
+                            <!-- JS will initialize or reload this width -->
+                            <div class="xp-progress-fill" style="width: {{ (g.user.green_points % 500) / 500 * 100 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                    Gain Green Points (XP) by logging your footprint, reducing emissions, and completing daily eco challenges. Every 500 points elevates you to the next level!
+                </p>
+            </div>
+            
+            <!-- Daily Challenges Card -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-calendar-check"></i> Daily Challenges
+                </div>
+                
+                <div class="challenges-list">
+                    {% for challenge in challenges %}
+                        <div class="challenge-item {% if challenge.completed %}completed{% endif %}" data-id="{{ challenge.id }}">
+                            <div class="challenge-left">
+                                <button class="challenge-check-btn" {% if challenge.completed %}disabled{% endif %}>
+                                    {% if challenge.completed %}
+                                        <i class="fa-solid fa-check"></i>
+                                    {% endif %}
+                                </button>
+                                <div>
+                                    <div class="challenge-title">{{ challenge.title }}</div>
+                                    <div class="challenge-desc">{{ challenge.desc }}</div>
+                                </div>
+                            </div>
+                            <span class="challenge-points">+{{ challenge.points }} XP</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Badges Card -->
+            <div class="glass-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-trophy"></i> Achievement Badges
+                </div>
+                
+                {% if badges %}
+                    <div class="badges-grid">
+                        {% for badge in badges %}
+                            <div class="badge-item" title="{{ badge.description }}">
+                                <div class="badge-icon-circle" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05);">
+                                    <i class="fa-solid fa-{{ badge.icon }}"></i>
+                                </div>
+                                <div class="badge-title">{{ badge.title }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 10px 0;">Complete tasks to unlock badges!</p>
+                {% endif %}
+            </div>
+            
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Category Chart Setup
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    
+    // Get colors from CSS variables
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#10b981';
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#34d399';
+    const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--danger').trim() || '#ef4444';
+    const warningColor = getComputedStyle(document.documentElement).getPropertyValue('--warning').trim() || '#f59e0b';
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#ffffff';
+
+    const categoryData = {
+        labels: ['Transportation', 'Electricity', 'Diet Habits', 'Waste & Composting'],
+        datasets: [{
+            data: [
+                {{ calc.transport_emissions }},
+                {{ calc.electricity_emissions }},
+                {{ calc.food_emissions }},
+                {{ calc.waste_emissions }}
+            ],
+            backgroundColor: [
+                dangerColor,
+                warningColor,
+                primaryColor,
+                accentColor
+            ],
+            borderWidth: 1,
+            borderColor: 'transparent'
+        }]
+    };
+
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: categoryData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        font: {
+                            family: 'Outfit',
+                            size: 11
+                        },
+                        boxWidth: 12
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // 2. Trend Chart Setup (AJAX fetches user history)
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    
+    fetch('/api/emissions-history')
+        .then(response => response.json())
+        .then(data => {
+            const labels = data.map(item => item.date);
+            const totals = data.map(item => item.total);
+            
+            const trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Carbon (tCO2e/yr)',
+                        data: totals,
+                        borderColor: primaryColor,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointBackgroundColor: primaryColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    family: 'Outfit',
+                                    size: 9
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: textColor,
+                                font: {
+                                    family: 'Outfit',
+                                    size: 9
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(err => console.error('Error fetching trend data:', err));
+});
+</script>
+{% endblock %}

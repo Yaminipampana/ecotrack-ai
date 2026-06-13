@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard – EcoTrack AI{% endblock %}
+
+{% block content %}
+<!-- Predefined SVG Avatars for leaderboard display -->
+{% set avatars = [
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#10B981" opacity="0.1"/><path d="M50 25c-8.284 0-15 6.716-15 15v10c0 8.284 6.716 15 15 15s15-6.716 15-15V40c0-8.284-6.716-15-15-15z" fill="#10B981"/><path d="M50 65c-16.569 0-30 13.431-30 30h60c0-16.569-13.431-30-30-30z" fill="#047857"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#F59E0B" opacity="0.1"/><circle cx="50" cy="40" r="16" fill="#F59E0B"/><path d="M50 62c-15 0-26 10-26 24h52c0-14-11-24-26-24z" fill="#D97706"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#34D399" opacity="0.1"/><path d="M50 25C36.193 25 25 36.193 25 50h50c0-13.807-11.193-25-25-25z" fill="#34D399"/><path d="M50 50v38c11 0 20-9 20-20H50z" fill="#059669"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#6EE7B7" opacity="0.1"/><path d="M50 20L32 45h36L50 20z" fill="#6EE7B7"/><path d="M50 45v45h25c0-20-10-45-25-45z" fill="#059669"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#60A5FA" opacity="0.1"/><circle cx="50" cy="42" r="14" fill="#60A5FA"/><path d="M50 62c-18 0-24 12-24 26h48c0-14-6-26-24-26z" fill="#2563EB"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;"><circle cx="50" cy="50" r="48" fill="#A7F3D0" opacity="0.1"/><path d="M30 40c0-11 9-20 20-20s20 9 20 20v10H30V40z" fill="#059669"/><path d="M20 70c0-10 10-18 30-18s30 8 30 18H20z" fill="#047857"/></svg>'
+] %}
+
+<div class="container reports-layout">
+    
+    <!-- Leaderboard Header -->
+    <div class="report-header">
+        <div>
+            <h2 style="font-size: 28px; font-weight: 800;">Global Carbon Reducers</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">Honoring community members with the highest carbon footprint reductions.</p>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Card -->
+    <div class="glass-card">
+        <div class="card-title">
+            <i class="fa-solid fa-ranking-star"></i> Footprint Reduction Leaderboard
+        </div>
+        
+        <div class="admin-table-container">
+            {% if leaderboard %}
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Initial Score (tCO2e)</th>
+                            <th>Latest Score (tCO2e)</th>
+                            <th>Level</th>
+                            <th>Total XP</th>
+                            <th>% Carbon Saved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in leaderboard %}
+                            <tr>
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <span class="rank-medal gold"><i class="fa-solid fa-medal"></i> 1st</span>
+                                    {% elif loop.index == 2 %}
+                                        <span class="rank-medal silver"><i class="fa-solid fa-medal"></i> 2nd</span>
+                                    {% elif loop.index == 3 %}
+                                        <span class="rank-medal bronze"><i class="fa-solid fa-medal"></i> 3rd</span>
+                                    {% else %}
+                                        <strong>#{{ loop.index }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        {{ avatars[user.avatar_index]|safe }}
+                                        <span style="font-weight: 600;">{{ user.username }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ user.first_score }}</td>
+                                <td>{{ user.latest_score }}</td>
+                                <td><span class="user-nav-badge" style="display: inline-flex; padding: 3px 8px; font-size: 11px;">Level {{ user.level }}</span></td>
+                                <td style="font-weight: 600; color: var(--text-secondary);">{{ user.green_points }}</td>
+                                <td>
+                                    {% if user.reduction > 0 %}
+                                        <span class="trend-indicator decreasing" style="font-size: 12px; padding: 4px 8px; border-radius: 20px;">
+                                            <i class="fa-solid fa-caret-down"></i> {{ user.reduction }}%
+                                        </span>
+                                    {% elif user.reduction < 0 %}
+                                        <span class="trend-indicator increasing" style="font-size: 12px; padding: 4px 8px; border-radius: 20px;">
+                                            <i class="fa-solid fa-caret-up"></i> {{ user.reduction|abs }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="trend-indicator neutral" style="font-size: 12px; padding: 4px 8px; border-radius: 20px;">
+                                            <i class="fa-solid fa-minus"></i> 0.0%
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="text-align: center; color: var(--text-secondary); padding: 40px 0;">
+                    No user data available yet. Complete a calculation to start!
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    
+</div>
+{% endblock %}

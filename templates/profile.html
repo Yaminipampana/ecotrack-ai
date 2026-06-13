@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile Settings – EcoTrack AI{% endblock %}
+
+{% block content %}
+<!-- Predefined SVG Avatars dictionary inside template for clean renderings -->
+{% set avatars = [
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#10B981" opacity="0.1"/><path d="M50 25c-8.284 0-15 6.716-15 15v10c0 8.284 6.716 15 15 15s15-6.716 15-15V40c0-8.284-6.716-15-15-15z" fill="#10B981"/><path d="M50 65c-16.569 0-30 13.431-30 30h60c0-16.569-13.431-30-30-30z" fill="#047857"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#F59E0B" opacity="0.1"/><circle cx="50" cy="40" r="16" fill="#F59E0B"/><path d="M50 62c-15 0-26 10-26 24h52c0-14-11-24-26-24z" fill="#D97706"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#34D399" opacity="0.1"/><path d="M50 25C36.193 25 25 36.193 25 50h50c0-13.807-11.193-25-25-25z" fill="#34D399"/><path d="M50 50v38c11 0 20-9 20-20H50z" fill="#059669"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#6EE7B7" opacity="0.1"/><path d="M50 20L32 45h36L50 20z" fill="#6EE7B7"/><path d="M50 45v45h25c0-20-10-45-25-45z" fill="#059669"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#60A5FA" opacity="0.1"/><circle cx="50" cy="42" r="14" fill="#60A5FA"/><path d="M50 62c-18 0-24 12-24 26h48c0-14-6-26-24-26z" fill="#2563EB"/></svg>',
+    '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#A7F3D0" opacity="0.1"/><path d="M30 40c0-11 9-20 20-20s20 9 20 20v10H30V40z" fill="#059669"/><path d="M20 70c0-10 10-18 30-18s30 8 30 18H20z" fill="#047857"/></svg>'
+] %}
+
+<div class="container profile-grid">
+    
+    <!-- Sidebar Selector (Avatars) -->
+    <div class="glass-card profile-avatar-selector">
+        <h3 style="margin-bottom: 20px; font-weight: 700;">Your Eco Avatar</h3>
+        
+        <div class="current-avatar-preview" id="current-avatar">
+            <!-- Preview of active avatar index -->
+            {{ avatars[g.user.avatar_index]|safe }}
+        </div>
+        
+        <div class="user-nav-badge" style="margin-bottom: 12px;">
+            Level <span>{{ g.user.current_level }}</span>
+        </div>
+        
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+            Choose a visual mascot that matches your sustainability identity.
+        </p>
+        
+        <h4 style="font-size: 14px; font-weight: 600; text-align: left; width: 100%; color: var(--text-secondary);">Select Mascot:</h4>
+        <div class="avatar-option-grid">
+            {% for avatar in avatars %}
+                <div class="avatar-option {% if g.user.avatar_index == loop.index0 %}selected{% endif %}" data-index="{{ loop.index0 }}">
+                    {{ avatar|safe }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Main Edit Pane -->
+    <div style="display: flex; flex-direction: column; gap: 32px;">
+        
+        <!-- Profile Form Card -->
+        <div class="glass-card">
+            <div class="card-title">
+                <i class="fa-solid fa-user-gear"></i> Account Settings
+            </div>
+            
+            <form action="{{ url_for('profile') }}" method="POST" id="profile-form">
+                <!-- Hidden input storing selected avatar -->
+                <input type="hidden" name="avatar_index" id="avatar_index_input" value="{{ g.user.avatar_index }}">
+                
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" value="{{ g.user.username }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" value="{{ g.user.email }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new_password" class="form-label">Change Password (Leave blank to keep current)</label>
+                    <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Enter new password">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </form>
+        </div>
+        
+        <!-- Dangerous Data Management Card -->
+        <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.02);">
+            <div class="card-title" style="color: var(--danger);">
+                <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone
+            </div>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+                Resetting deletes all carbon footprints, challenges checked off, levels and XP points. This action is absolute and cannot be undone.
+            </p>
+            
+            <form action="{{ url_for('profile') }}" method="POST" onsubmit="return confirmResetData()">
+                <input type="hidden" name="action" value="reset_data">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-arrow-up"></i> Reset Carbon Footprint History
+                </button>
+            </form>
+        </div>
+        
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const avatarOptions = document.querySelectorAll('.avatar-option');
+    const avatarInput = document.getElementById('avatar_index_input');
+    const avatarPreview = document.getElementById('current-avatar');
+    
+    avatarOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remove selection state from all options
+            avatarOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Add selection to this option
+            option.classList.add('selected');
+            
+            // Get index
+            const index = option.getAttribute('data-index');
+            avatarInput.value = index;
+            
+            // Update preview at the top
+            avatarPreview.innerHTML = option.innerHTML;
+        });
+    });
+});
+
+// Confirmation dialog for reset action
+function confirmResetData() {
+    return confirm("Are you absolutely sure you want to reset all your carbon footprint calculations, challenges progress, and Green points? This cannot be undone.");
+}
+</script>
+{% endblock %}
