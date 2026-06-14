@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from models import db, User, CarbonCalculation, CompletedChallenge, AiRecommendation
-from gemini_helper import generate_sustainability_recommendations
+from gemini_helper import generate_sustainability_recommendations, clean_obfuscated_text
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ecotrack_ai_secret_key_2026')
@@ -157,10 +157,28 @@ def dashboard():
     recommendations = None
     if latest_rec:
         try:
+            raw_summary = latest_rec.summary
+            raw_tips = json.loads(latest_rec.tips_json)
+            raw_weekly = json.loads(latest_rec.weekly_plan_json)
+            
+            # Clean text in case it is obfuscated with colons
+            clean_summary = clean_obfuscated_text(raw_summary)
+            clean_tips = []
+            for tip in raw_tips:
+                if isinstance(tip, dict):
+                    clean_tips.append({
+                        "category": clean_obfuscated_text(tip.get("category", "")),
+                        "tip": clean_obfuscated_text(tip.get("tip", ""))
+                    })
+                else:
+                    clean_tips.append(clean_obfuscated_text(tip))
+            
+            clean_weekly = [clean_obfuscated_text(day) for day in raw_weekly]
+            
             recommendations = {
-                "summary": latest_rec.summary,
-                "tips": json.loads(latest_rec.tips_json),
-                "weekly_plan": json.loads(latest_rec.weekly_plan_json)
+                "summary": clean_summary,
+                "tips": clean_tips,
+                "weekly_plan": clean_weekly
             }
         except Exception as e:
             print(f"Error parsing recommendations from DB: {e}")
@@ -239,6 +257,9 @@ def calculator():
             
             total_emissions = transport_emissions + electricity_emissions + food_emissions + waste_emissions
             
+            # Check if user has previous calculations to check for reduction
+            prev_calc = CarbonCalculation.query.filter_by(user_id=g.user.id).order_by(CarbonCalculation.calculated_at.desc()).first()
+            
             # Save Calculation
             new_calc = CarbonCalculation(
                 user_id=g.user.id,
@@ -254,8 +275,6 @@ def calculator():
             # Gamification Logic: Award Points
             points_gained = 100 # Standard points for completing a calculation
             
-            # Check if user has previous calculations to check for reduction
-            prev_calc = CarbonCalculation.query.filter_by(user_id=g.user.id).order_by(CarbonCalculation.calculated_at.desc()).first()
             if prev_calc and new_calc.total_emissions < prev_calc.total_emissions:
                 points_gained += 150 # Bonus for reducing emissions!
                 flash('Awesome! You reduced your carbon emissions and earned a 150 Green Points bonus!', 'success')

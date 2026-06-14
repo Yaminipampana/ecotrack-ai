@@ -100,6 +100,20 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your web browser.
 
 ---
 
+## Running the Test Suite
+
+EcoTrack AI includes a comprehensive test suite covering models, route validations, API mock fallbacks, and gamification calculations.
+
+### Run Automated Tests
+Run the entire unittest suite locally using:
+```bash
+python -m unittest discover -s tests
+```
+
+For more details on automated test cases, manual testing procedures, and checklist instructions, please refer to the [TESTING.md](TESTING.md) guide.
+
+---
+
 ## Testing Credentials
 
 ### Standard Users
